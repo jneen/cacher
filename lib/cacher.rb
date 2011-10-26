@@ -121,7 +121,7 @@ module Cacher
 
   def set(key, options={}, &blk)
     val = do_block(&blk)
-    cache_set(key, marshal_value(val))
+    cache_set(key, marshal_value(val), options)
     val
   end
 
@@ -158,15 +158,15 @@ private
     end
   end
 
-  def cache_set(key, val)
+  def cache_set(key, val, options={})
     return val unless enabled?
 
     key = prepare_key(key)
 
     if cache.respond_to? :set
-      cache.set(key, val)
+      cache.set(key, val, options)
     else
-      cache.write(key, val)
+      cache.write(key, val, options)
     end
 
     val
