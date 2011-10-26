@@ -1,78 +1,115 @@
 describe Cacher do
-  let(:cache) { TestCache.new }
-  let(:cacher) { Cacher::Base.new(:cache => cache) }
-
-  describe 'enabled' do
-    before do
-      cacher.enable!
+  describe 'configuring' do
+    it 'sets global configuration options' do
+      deny { Cacher::Base.new.namespaced? }
+      Cacher.namespace = 'global'
+      assert { Cacher::Base.new.namespaced? }
+      assert { Cacher::Base.new.namespace == 'global' }
     end
 
-    it 'sets and gets key' do
-      assert { cacher.get('foo').nil? }
-      assert { cacher.set('foo') { 'bar' } == 'bar' }
-      assert { cacher.get('foo') == 'bar' }
-    end
-
-    it 'gets with block syntax' do
-      assert { cacher.get('foo') { 1 } == 1 }
-      assert { cacher.get('foo') { 2 } == 1 }
-    end
-
-    it 'only calls the block once' do
-      counter = 0
-
-      10.times do
-        cacher.get('foo') { counter += 1 }
+    it 'yields a configure block' do
+      some_cache = TestCache.new
+      Cacher.configure do |config|
+        config.cache = some_cache
       end
 
-      assert { counter == 1 }
+      assert { Cacher.cache.object_id == some_cache.object_id }
     end
 
-    it 'queries a key with #key?' do
-      assert { cacher.key?('foo') == false }
-      cacher.set('foo') { 'bar' }
-      assert { cacher.key?('foo') == true }
+    it 'yields a configure block on a new object' do
+      my_cacher = Cacher::Base.new do |cacher|
+        cacher.max_key_size = 12
+      end
+
+      assert { my_cacher.max_key_size == 12 }
     end
 
-    it 'transparently handles nil values' do
-      cacher.set('foo') { nil }
-      assert { cacher.key?('foo') == true }
-      assert { cacher.get('foo') == nil }
-      assert { cacher.get('foo') { :not_nil } == nil }
-    end
-
-    it 'uses a namespace' do
-      cacher.namespace = 'my_cool_namespace'
-      cacher.set('foo') { 1 }
-      assert { cache.keys.include? 'my_cool_namespace/foo' }
-      deny   { cache.keys.include? 'foo' }
-    end
-
-    it %[doesn't use a namespace by default] do
-      deny { cacher.namespaced? }
-      cacher.set('foo') { 1 }
-      assert { cache.keys.include? 'foo' }
-    end
-
-    it %[shortens a key if it's too long] do
-      key = "a_really_long_key/" * 100
-      cacher.max_key_size = 100
-
-      cacher.set(key) { 3 }
-      assert { cache.keys.first =~ %r[^sha1/[0-9a-f]+$] }
-      assert { cacher.get(key) == 3 }
+    it 'creates a new object with a hash' do
+      my_cacher = Cacher::Base.new(:enabled => true)
+      assert { my_cacher.enabled? }
     end
   end
 
-  describe 'disabled' do
-    before do
-      cacher.disable!
+  describe 'usage' do
+    let(:cache) { TestCache.new }
+    let(:cacher) { Cacher::Base.new(:cache => cache) }
+
+    after do
+      Cacher.reset!
     end
 
-    it 'nops when setting a key' do
-      assert { cacher.get('foo').nil? }
-      assert { cacher.set('foo') { 'bar' } == 'bar' }
-      assert { cacher.get('foo').nil? }
+    describe 'enabled' do
+      before do
+        cacher.enable!
+      end
+
+      it 'sets and gets key' do
+        assert { cacher.get('foo').nil? }
+        assert { cacher.set('foo') { 'bar' } == 'bar' }
+        assert { cacher.get('foo') == 'bar' }
+      end
+
+      it 'gets with block syntax' do
+        assert { cacher.get('foo') { 1 } == 1 }
+        assert { cacher.get('foo') { 2 } == 1 }
+      end
+
+      it 'only calls the block once' do
+        counter = 0
+
+        10.times do
+          cacher.get('foo') { counter += 1 }
+        end
+
+        assert { counter == 1 }
+      end
+
+      it 'queries a key with #key?' do
+        assert { cacher.key?('foo') == false }
+        cacher.set('foo') { 'bar' }
+        assert { cacher.key?('foo') == true }
+      end
+
+      it 'transparently handles nil values' do
+        cacher.set('foo') { nil }
+        assert { cacher.key?('foo') == true }
+        assert { cacher.get('foo') == nil }
+        assert { cacher.get('foo') { :not_nil } == nil }
+      end
+
+      it 'uses a namespace' do
+        cacher.namespace = 'my_cool_namespace'
+        cacher.set('foo') { 1 }
+        assert { cache.keys.include? 'my_cool_namespace/foo' }
+        deny   { cache.keys.include? 'foo' }
+      end
+
+      it %[doesn't use a namespace by default] do
+        deny { cacher.namespaced? }
+        cacher.set('foo') { 1 }
+        assert { cache.keys.include? 'foo' }
+      end
+
+      it %[shortens a key if it's too long] do
+        key = "a_really_long_key/" * 100
+        cacher.max_key_size = 100
+
+        cacher.set(key) { 3 }
+        assert { cache.keys.first =~ %r[^sha1/[0-9a-f]+$] }
+        assert { cacher.get(key) == 3 }
+      end
+    end
+
+    describe 'disabled' do
+      before do
+        cacher.disable!
+      end
+
+      it 'nops when setting a key' do
+        assert { cacher.get('foo').nil? }
+        assert { cacher.set('foo') { 'bar' } == 'bar' }
+        assert { cacher.get('foo').nil? }
+      end
     end
   end
 end
