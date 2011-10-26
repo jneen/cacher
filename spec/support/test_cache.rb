@@ -11,7 +11,7 @@ class TestCache < Hash
     self[key.to_s]
   end
 
-  def set(key, val)
+  def set(key, val, opts={})
     check_key(key)
     self[key.to_s] = val
   end

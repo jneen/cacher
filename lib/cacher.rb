@@ -41,8 +41,8 @@ module Cacher
   #
   # #get (or #read)  - takes one argument and returns
   #                    something from a cache.
-  # #set (or #write) - takes two arguments, a key and a value, and
-  #                    sets something in a cache.
+  # #set (or #write) - takes three arguments, a key, a value, and
+  #                    an options hash, and sets something in a cache.
   attr_writer :cache
   def cache
     return @cache if instance_variable_defined? :@cache
