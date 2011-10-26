@@ -1,0 +1,8 @@
+# rvm
+.rvmrc
+
+# gem build artifacts
+*.gem
+
+# ignore Gemfile.lock, since this is a gem
+Gemfile.lock
