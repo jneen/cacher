@@ -95,7 +95,7 @@ describe Cacher do
         cacher.max_key_size = 100
 
         cacher.set(key) { 3 }
-        assert { cache.keys.first =~ %r[^sha1/[0-9a-f]+$] }
+        assert { cache.last_accessed_key =~ %r[^sha1/[0-9a-f]+$] }
         assert { cacher.get(key) == 3 }
       end
     end

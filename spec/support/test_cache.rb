@@ -6,15 +6,20 @@ class TestCache < Hash
 
   class KeyLengthError < ArgumentError; end
 
+  attr_reader :last_accessed_key
+
   def get(key)
+    @last_accessed_key = key
     check_key(key)
     self[key.to_s]
   end
 
   def set(key, val, opts={})
+    @last_accessed_key = key
     check_key(key)
     self[key.to_s] = val
   end
+
 
 private
   def check_key(key)
