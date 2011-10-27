@@ -173,8 +173,6 @@ private
   end
 
   def do_block(&block)
-    return nil unless block_given?
-
     if block.arity > 0
       response = {}
       block.call(response)
