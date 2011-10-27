@@ -98,6 +98,30 @@ describe Cacher do
         assert { cache.last_accessed_key =~ %r[^sha1/[0-9a-f]+$] }
         assert { cacher.get(key) == 3 }
       end
+
+      describe 'marshalling' do
+        before do
+          cacher.marshal = true
+        end
+
+        it 'adds /marshal to the end of the key' do
+          cacher.set('foo') { 1 }
+
+          assert { cache.last_accessed_key == 'foo/marshal' }
+        end
+
+        it 'marshals the value' do
+          cacher.set('foo') { 1 }
+
+          assert { cache[cache.last_accessed_key] == Marshal.dump(1) }
+        end
+
+        it 'gets the marshalled value back' do
+          cacher.set('foo') { 1 }
+
+          assert { cacher.get('foo') == 1 }
+        end
+      end
     end
 
     describe 'disabled' do
