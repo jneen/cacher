@@ -23,6 +23,8 @@ class TestCache < Hash
 
 private
   def check_key(key)
-    raise KeyLengthError if key.size > max_key_length
+    if key.size > max_key_length
+      raise KeyLengthError.new("key too long (#{key.size} > #{key.max_key_length}): #{key}")
+    end
   end
 end
