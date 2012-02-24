@@ -90,6 +90,31 @@ module Cacher
     @enabled = false
   end
 
+  def bust!
+    bust_hash[object_id] = true
+    if block_given?
+      begin
+        yield
+      ensure
+        unbust!
+      end
+    end
+  end
+
+  def unbust!
+    bust_hash[object_id] = false
+  end
+
+  def busting?
+    !!bust_hash[object_id]
+  end
+
+private
+  def bust_hash
+    Thread.current[:cacher_bust_hash] ||= {}
+  end
+public
+
   def enabled?
     return @enabled if instance_variable_defined? :@enabled
     @enabled = Cacher.enabled?
@@ -108,7 +133,7 @@ module Cacher
   end
 
   def get(key, options={}, &blk)
-    return set(key, options, &blk) if options.delete(:break)
+    return set(key, options, &blk) if options.delete(:break) || busting?
 
     cached = cache_get(key)
 

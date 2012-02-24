@@ -135,5 +135,31 @@ describe Cacher do
         assert { cacher.get('foo').nil? }
       end
     end
+
+    describe 'busting the cache' do
+      before do
+        cacher.enable!
+      end
+
+      it 'writes through when busting' do
+        cacher.set('foo') { 1 }
+
+        cacher.bust!
+        cacher.get('foo') { 2 }
+        cacher.unbust!
+
+        assert { cacher.get('foo') == 2 }
+      end
+
+      it 'busts with a block' do
+        cacher.set('foo') { 1 }
+
+        cacher.bust! do
+          cacher.get('foo') { 2 }
+        end
+
+        assert { cacher.get('foo') == 2 }
+      end
+    end
   end
 end
