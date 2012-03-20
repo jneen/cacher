@@ -121,6 +121,23 @@ describe Cacher do
 
           assert { cacher.get('foo') == 1 }
         end
+
+        it 'attempts to find missing constants' do
+          module Finders
+            class Keepers; end
+
+            def self.const_missing(name)
+              class_eval "class #{name}; end"
+            end
+          end
+
+          cacher.set('keepers') { Finders::Keepers.new }
+          assert { cacher.get('keepers').is_a? Finders::Keepers }
+          Finders.send :remove_const, 'Keepers'
+          assert { cacher.get('keepers').is_a? Finders::Keepers }
+          Object.send :remove_const, 'Finders'
+          assert { rescuing { cacher.get('keepers') }.is_a? NameError }
+        end
       end
     end
 
