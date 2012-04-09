@@ -72,3 +72,16 @@ Cacher.configure do |config|
   config.bust!
 end
 ```
+
+# Instances
+
+If you want to talk to multiple underlying caches, you can use instances of `Cacher::Base`.  These act exactly like Cacher (even with the configure block), and maintain separate configurations.
+
+``` ruby
+cache1 = Cacher::Base.new do |config|
+  # ...
+end
+
+cache2 = Cacher::Base.new do |config|
+  # ...
+end
