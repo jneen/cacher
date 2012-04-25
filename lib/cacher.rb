@@ -144,6 +144,15 @@ public
     unmarshal_value(cached)
   end
 
+  def get_multi(keys)
+    cached_results = cache.read_multi(keys.map { |k| prepare_key(k) }).inject({}) do |results, (key, value)|
+      results[key] = unmarshal_value(value)
+      results
+    end
+
+    keys.map { |key| cached_results[prepare_key(key)] }
+  end
+
   def set(key, options={}, &blk)
     val = do_block(&blk)
     cache_set(key, marshal_value(val), options)
