@@ -144,6 +144,17 @@ public
     unmarshal_value(cached)
   end
 
+  def get_multi(keys)
+    prepared_keys = keys.map { |k| prepare_key(k) }
+    cached = cache.read_multi(*prepared_keys)
+    cached_results = cached.inject({}) do |results, (key, value)|
+      results[key] = unmarshal_value(value)
+      results
+    end
+
+    keys.map { |key| cached_results[prepare_key(key)] }
+  end
+
   def set(key, options={}, &blk)
     val = do_block(&blk)
     cache_set(key, marshal_value(val), options)
@@ -219,11 +230,32 @@ private
 
   def unmarshal_value(val)
     if marshal?
-      Marshal.load(val)
+      safe_marshal_load(val)
     else
       return nil if val == CACHER_NIL
       val
     end
   end
 
+  def safe_marshal_load(val)
+    Marshal.load(val)
+  rescue ArgumentError => e
+    last_try ||= nil
+    if e.message =~ /^undefined class\/module (.+?)$/
+      const_name = $1
+      raise e if last_try == const_name
+      const_name.respond_to?(:constantize) ? const_name.constantize : const_lookup(const_name)
+      last_try = const_name
+      retry
+    else
+      raise e
+    end
+  end
+
+  def const_lookup(const_name)
+    constant = Object
+    const_name.split('::').each do |name|
+      constant = constant.const_defined?(name) ? constant.const_get(name) : constant.const_missing(name)
+    end
+  end
 end
