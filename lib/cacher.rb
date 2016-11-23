@@ -145,7 +145,9 @@ public
   end
 
   def get_multi(keys)
-    cached_results = cache.read_multi(keys.map { |k| prepare_key(k) }).inject({}) do |results, (key, value)|
+    prepared_keys = keys.map { |k| prepare_key(k) }
+    cached = cache.read_multi(*prepared_keys)
+    cached_results = cached.inject({}) do |results, (key, value)|
       results[key] = unmarshal_value(value)
       results
     end
